@@ -10,9 +10,9 @@ const {
   CLIENT,
   BASE_URL
 } = process.env;
-const { auth } = require('express-openid-connect');
+const { auth, requiresAuth } = require('express-openid-connect');
 const config = {
-  authRequired: false,
+  authRequired: true,
   auth0Logout: true,
   secret: SECRET,
   baseURL: AUDIENCE,
@@ -30,8 +30,8 @@ app.use(express.urlencoded({extended:true}));
 app.use(auth(config));
 
 
-app.get('/cupcakes', async (req, res, next) => {
-  if(req.oidc.isAuthenticated()){
+app.get('/cupcakes', requiresAuth(), async (req, res, next) => {
+  if(true){
     try {
       const cupcakes = await Cupcake.findAll();
       res.send(cupcakes);
@@ -42,6 +42,18 @@ app.get('/cupcakes', async (req, res, next) => {
   }
 });
 
+
+app.get('/', async (req, res, next) => {
+  console.log(req.oidc.user);
+  const user = req.oidc.user;
+  const html = `<h1>cupcakes app</h1>
+<h2>Welcome, ${user.name}</h2>
+<p>username: ${user.email}</p>
+<img src=${user.picture}  referrerpolicy="no-referrer" />`;
+
+res.send(html);
+
+})
 // error handling middleware
 app.use((error, req, res, next) => {
   console.error('SERVER ERROR: ', error);
